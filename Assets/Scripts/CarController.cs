@@ -8,6 +8,8 @@ public class CarController : MonoBehaviour
     [SerializeField] float speedMultiplier;
     [SerializeField] GameObject turningPoint;
 
+    [SerializeField] bool DEBUG_MODE = false;
+
     Rigidbody rb;
 
     Vector3 acceleration;
@@ -15,8 +17,6 @@ public class CarController : MonoBehaviour
     Vector3 turnRadius;
 
     Vector3 startingPos;
-
-    enum TurnDirection { RIGHT, LEFT }
 
     const float BRAKE_LIMIT = 0.5f;
 
@@ -30,6 +30,17 @@ public class CarController : MonoBehaviour
         startingPos = transform.position;
     }
 
+    private void Update()
+    {
+        if (DEBUG_MODE)
+        {
+            if (Input.GetKeyDown(Inputs.RESET_CAR))
+            {
+                ResetCar();
+            }
+        }
+    }
+
     void FixedUpdate()
     {
         CheckForInput();
@@ -37,12 +48,7 @@ public class CarController : MonoBehaviour
 
     void CheckForInput()
     {
-        if (Input.GetKeyDown(Inputs.RESET_CAR))
-        {
-            ResetCar();
-        }
-
-        else if (Input.GetKey(Inputs.ACCEL))
+        if (Input.GetKey(Inputs.ACCEL))
         {
             Accelerate();
         }
@@ -80,7 +86,12 @@ public class CarController : MonoBehaviour
 
     void Turn(Vector3 dir)
     {
+        if (rb.velocity.magnitude < 0.1f)
+        {
+            return;
+        }
         transform.RotateAround(turningPoint.transform.position, dir, CarParams.turnRadius * Time.fixedDeltaTime);
+
 
         //else if (dir == TurnDirection.LEFT)
         //{

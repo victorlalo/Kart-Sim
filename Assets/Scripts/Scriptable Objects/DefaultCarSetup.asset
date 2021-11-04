@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: DefaultCarSetup
   m_EditorClassIdentifier: 
   setupName: Default
-  acceleration: 20
+  acceleration: 30
   topSpeed: 100
-  brakingForce: 30
-  turnRadius: 85
+  brakingForce: 12
+  turnRadius: 138.6
   weight: 250
   tireWear: 5
