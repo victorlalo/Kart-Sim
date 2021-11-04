@@ -8,10 +8,14 @@ public class SO_CarParams : ScriptableObject
     public float acceleration;
     public float topSpeed;
     public float brakingForce;
+    public float frictionForce;
 
     public float turnRadius;
 
     public float weight;
+    public float straightDrag;
+    public float angularDrag;
+
     public float tireWear;
 
 
