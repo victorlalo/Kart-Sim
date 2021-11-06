@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: DefaultCarSetup
   m_EditorClassIdentifier: 
   setupName: Default
-  acceleration: 150
+  acceleration: 160
   topSpeed: 150
-  brakingForce: 30
-  frictionForce: 25
-  turnRadius: 160
-  weight: 20
-  straightDrag: 0.5
-  angularDrag: 5
+  brakingForce: 100
+  frictionForce: 100
+  turnRadius: 80
+  weight: 30
+  straightDrag: 0.1
+  angularDrag: 0.1
   tireWear: 5

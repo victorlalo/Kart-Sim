@@ -2,13 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// TODO: BREAK THIS CLASS INTO MULTIPLE MODULAR COMPONENTS
+// input
+// physics
+// visuals
+// pathfinding
+// AI brain
+
 public class CarController : MonoBehaviour
 {
     [SerializeField] SO_CarParams CarParams;
-    [SerializeField] float speedMultiplier;
+    [SerializeField] float forceMultiplier;
     [SerializeField] GameObject turningPoint;
-    //[SerializeField] GameObject controlSphere;
-    //[SerializeField] Vector3 sphereOffest = new Vector3(0f, 0.5f, 0f);
 
     [SerializeField] GameObject frontRightWheel;
     [SerializeField] GameObject frontLeftWheel;
@@ -17,9 +22,10 @@ public class CarController : MonoBehaviour
 
 
     [SerializeField] bool DEBUG_MODE = false;
+    [SerializeField] bool PLAYER_CONTROLLED = true;
 
     Rigidbody rb;
-    ParticleSystem particles;
+    ParticleSystem[] particles;
 
     Vector3 acceleration;
     Vector3 brakingForce;
@@ -28,8 +34,8 @@ public class CarController : MonoBehaviour
     public float currentSpeed = 0f;
     public Vector3 forwardDir; 
 
-    float throttle = 0f;
-    float brake = 0f;
+    public float throttle = 0f;
+    public float brake = 0f;
     public float steering = 0f;
 
     public bool isGrounded = false;
@@ -37,47 +43,40 @@ public class CarController : MonoBehaviour
     Vector3 startingPos;
 
     const float BRAKE_LIMIT = 0.5f;
-    const float MIN_TURN_SPEED = 0.5f;
+    const float MIN_TURN_SPEED = 3f;
+    [SerializeField] float DRIFT_LIMIT = 0.95f;
 
     void Awake()
     {
-        //controlSphere.transform.parent = null;
         rb = GetComponent<Rigidbody>();
 
-        particles = GetComponentInChildren<ParticleSystem>();
-        particles.enableEmission = false;
-        particles.Stop();
-
-        //rb = controlSphere.GetComponent<Rigidbody>();
+        particles = GetComponentsInChildren<ParticleSystem>();
+        foreach (ParticleSystem p in particles)
+        {
+            p.enableEmission = false;
+            p.Stop();
+        }
+        
 
         startingPos = transform.position;
     }
 
     private void Update()
     {
-        CheckForInput();
-        CheckGroundState();
-
         //TODO: MOVE THIS TO AWAKE METHOD WHEN TUNED PROPERLY
-        turnRadius = new Vector3(0, CarParams.turnRadius, 0);
+        //turnRadius = new Vector3(0, CarParams.turnRadius, 0);
 
-        rb.mass = CarParams.weight;
-        rb.drag = CarParams.straightDrag;
-        rb.angularDrag = CarParams.angularDrag;
+        //rb.mass = CarParams.weight;
+        //rb.drag = CarParams.straightDrag;
+        //rb.angularDrag = CarParams.angularDrag;
 
-        // MOVE TO AWAKE BETWEEN COMMENTS
+        // MOVE TO AWAKE BETWEEN COMMENTS ^^^
 
-        if (steering != 0 && particles.isStopped)
-        {
-            particles.enableEmission = true;
-            particles.Play();
-        }
-        else if (steering == 0 && particles.isPlaying)
-        {
-            particles.enableEmission = false;
-            particles.Stop();
-        }
-        
+        if (PLAYER_CONTROLLED)
+            CheckForInput();
+
+        CheckGroundState();
+        ApplyParticles();
 
         if (DEBUG_MODE)
         {
@@ -97,7 +96,6 @@ public class CarController : MonoBehaviour
         //TODO: Fix wheel animation
         //AnimateWheels();
 
-        //transform.position = controlSphere.transform.position - sphereOffest;
     }
 
     void FixedUpdate()
@@ -107,34 +105,18 @@ public class CarController : MonoBehaviour
             return;
         }
 
-        // Acceleration/deceleration force
-        if (rb.velocity.magnitude < CarParams.topSpeed)
-            rb.AddForce(throttle * CarParams.acceleration * transform.forward * speedMultiplier * Time.fixedDeltaTime, ForceMode.Force);
+        Accelerate();
+        Brake();
+        Steer();
 
-        if (rb.velocity.z > 0.1f || rb.velocity.x > 0.1f)
-            rb.AddForce(brake * CarParams.brakingForce * -transform.forward * speedMultiplier * Time.fixedDeltaTime, ForceMode.Force);
-
-        if (Mathf.Abs(steering) > 0.1f && rb.velocity.magnitude > MIN_TURN_SPEED)
-        {
-            transform.RotateAround(turningPoint.transform.position, transform.up * steering, CarParams.turnRadius * Time.fixedDeltaTime);
-            rb.AddForce(steering * CarParams.turnRadius * transform.right.normalized * speedMultiplier * Time.fixedDeltaTime, ForceMode.Force);
-        }
         
     }
 
     void CheckForInput()
     {
-        throttle = Input.GetKey(Inputs.ACCEL) ? 1f : 0f;
-        brake = Input.GetKey(Inputs.BRAKE) ? 1f : 0f;
-
-        if (Input.GetKey(Inputs.TURN_RIGHT))
-            steering = 1f;
-
-        else if (Input.GetKey(Inputs.TURN_LEFT))
-            steering = -1f;
-        else
-            steering = 0f;
-
+        throttle = Input.GetAxis("Throttle");
+        brake = Input.GetAxis("Brake");
+        steering = Input.GetAxis("Horizontal");
     }
 
     void CheckGroundState()
@@ -144,39 +126,65 @@ public class CarController : MonoBehaviour
 
     void Accelerate()
     {
-        if (rb.velocity.z < CarParams.topSpeed)
-            rb.velocity += acceleration * Time.fixedDeltaTime * speedMultiplier;
+        if (rb.velocity.magnitude < CarParams.topSpeed)
+            rb.AddForce(throttle * CarParams.acceleration * transform.forward * forceMultiplier * Time.fixedDeltaTime, ForceMode.Force);
     }
 
     void Brake()
     {
-        if (rb.velocity.z >= BRAKE_LIMIT)
-        {
-            rb.velocity -= brakingForce * Time.fixedDeltaTime * speedMultiplier;
-            if (rb.velocity.z == 0)
-                rb.velocity = Vector3.zero;
-        }
+        if (rb.velocity.z > 0.1f || rb.velocity.x > 0.1f)
+            rb.AddForce(brake * CarParams.brakingForce * -transform.forward * forceMultiplier * Time.fixedDeltaTime, ForceMode.Force);
     }
 
     // TODO: Reverse the car
 
-    void Turn(Vector3 dir)
+    void Steer()
     {
-        if (rb.velocity.magnitude < 0.1f)
+        if (Mathf.Abs(steering) > 0.1f && rb.velocity.magnitude > MIN_TURN_SPEED)
         {
-            return;
+            transform.RotateAround(turningPoint.transform.position, transform.up * steering, CarParams.turnRadius * Time.fixedDeltaTime);
+            rb.AddForce(steering * CarParams.frictionForce * transform.right * forceMultiplier * Time.fixedDeltaTime, ForceMode.Force);
+            rb.AddForce(transform.forward * steering, ForceMode.Acceleration);
         }
-        transform.RotateAround(turningPoint.transform.position, dir, CarParams.turnRadius * Time.fixedDeltaTime);
 
+    }
 
-        //else if (dir == TurnDirection.LEFT)
-        //{
-        //    //transform.Rotate(0, CarParams.turnRadius * Time.fixedDeltaTime * -1, 0);
-        //    transform.RotateAround(turningPoint, Vector3.left, CarParams.turnRadius * Time.fixedDeltaTime);
-        //}
+    void ApplyParticles()
+    {
+        if (!isGrounded)
+        {
+            foreach (ParticleSystem p in particles)
+            {
+                p.enableEmission = false;
+                p.Stop();
+                p.gameObject.SetActive(false);
+            }
+        }
 
-        acceleration = transform.forward * CarParams.acceleration;
+        float driftAmount = Vector3.Dot(transform.forward.normalized, rb.velocity.normalized);
+        //Debug.Log(driftAmount);
 
+        if (rb.velocity.magnitude > 35f && Mathf.Abs(steering) > 0.1f && Mathf.Abs(driftAmount - 1) < DRIFT_LIMIT && particles[0].isStopped)
+        {
+            foreach (ParticleSystem p in particles)
+            {
+                if (!p.gameObject.activeInHierarchy)
+                {
+                    p.gameObject.SetActive(true);
+                }
+                p.enableEmission = true;
+                p.Play();
+            }
+                
+        }
+        else if ((rb.velocity.magnitude < 35f || Mathf.Abs(steering) < 0.1f || Mathf.Abs(driftAmount - 1) >= DRIFT_LIMIT) && particles[0].isPlaying)
+        {
+            foreach (ParticleSystem p in particles)
+            {
+                p.enableEmission = false;
+                p.Stop();
+            }
+        }
     }
 
     void AnimateWheels()
@@ -193,7 +201,13 @@ public class CarController : MonoBehaviour
     public void ResetCar()
     {
         transform.position = startingPos + new Vector3(0, 1, 0);
-        //controlSphere.transform.position = transform.position;
+
+        foreach(ParticleSystem p in particles)
+        {
+            p.enableEmission = false;
+            p.Stop();
+        }
+        
         transform.eulerAngles = Vector3.zero;
         rb.velocity = Vector3.zero;
         acceleration = transform.forward * CarParams.acceleration;

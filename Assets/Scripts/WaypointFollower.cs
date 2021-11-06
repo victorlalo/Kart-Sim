@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class WaypointFollower : MonoBehaviour
 {
@@ -22,7 +23,7 @@ public class WaypointFollower : MonoBehaviour
 
     private void Update()
     {
-        if (Mathf.Abs(Vector3.Distance(transform.position, nextWP)) <= 5f)
+        if (Mathf.Abs(Vector3.Distance(transform.position, nextWP)) <= 3f)
         {
             nextWP = wpManager.IncrementWaypoint();
         }
@@ -31,6 +32,7 @@ public class WaypointFollower : MonoBehaviour
     void FixedUpdate()
     {
         rb.MovePosition(Vector3.MoveTowards(transform.position, nextWP, Time.fixedDeltaTime * speedMultiplier));
+        //rb.DOMove(nextWP,)
     }
 
     //IEnumerator rotateTowards(float angle)
