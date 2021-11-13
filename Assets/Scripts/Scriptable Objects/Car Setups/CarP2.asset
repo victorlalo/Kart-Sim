@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27141b85ce8da4a4d8150fa6ce6be73a, type: 3}
+  m_Name: CarP2
+  m_EditorClassIdentifier: 
+  setupName: Default
+  topSpeed: 200
+  accelerationForce: 82
+  brakingForce: 80
+  turnAmount: 26
+  weight: 30
+  tireWear: 5
