@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27141b85ce8da4a4d8150fa6ce6be73a, type: 3}
   m_Name: CarP2
   m_EditorClassIdentifier: 
-  setupName: Default
+  setupName: P2
   topSpeed: 200
-  accelerationForce: 82
+  accelerationForce: 100
   brakingForce: 80
-  turnAmount: 26
+  turnAmount: 29
   weight: 30
   tireWear: 5
